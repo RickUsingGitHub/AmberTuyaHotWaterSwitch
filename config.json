@@ -1,0 +1,15 @@
+{
+    "AMBER_API_TOKEN": "psk_f5b8****250c1187b2d1",
+    "AMBER_SITE_ID": null,
+    "TUYA_DEVICE_ID": "bf1****4a6608y4zv",
+    "TUYA_IP_ADDRESS": "192.168.0.****",
+    "TUYA_LOCAL_KEY": "UZ(****(g",
+    "TUYA_VERSION": 3.4,
+    "REFRESH_RATE": 60,
+    "WINDOW_SIZE": "1142x410",
+    "SETTINGS_FILE": "amber_alarm_settings.json",
+    "CHEER_SOUND_FILE": "Cheer.wav",
+    "ALARM_SOUND_FILE": "Alarm.wav",
+    "MUTE_START_HOUR": 23,
+    "MUTE_END_HOUR": 8
+}
