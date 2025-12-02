@@ -1,9 +1,9 @@
 {
-    "AMBER_API_TOKEN": "****",
+    "AMBER_API_TOKEN": "your_amber_api_token",
     "AMBER_SITE_ID": null,
-    "TUYA_DEVICE_ID": "****",
-    "TUYA_IP_ADDRESS": "****",
-    "TUYA_LOCAL_KEY": "****",
+    "TUYA_DEVICE_ID": "your_tuya_device_id",
+    "TUYA_IP_ADDRESS": "your_tuya_device_ip",
+    "TUYA_LOCAL_KEY": "your_tuya_local_key",
     "TUYA_VERSION": 3.4,
     "TUYA_SWITCH_ID": 1,
     "REFRESH_RATE": 60,
