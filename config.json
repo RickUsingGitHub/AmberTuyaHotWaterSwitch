@@ -1,9 +1,9 @@
 {
-    "AMBER_API_TOKEN": "psk_f5b8****250c1187b2d1",
+    "AMBER_API_TOKEN": "****",
     "AMBER_SITE_ID": null,
-    "TUYA_DEVICE_ID": "bf1****4a6608y4zv",
-    "TUYA_IP_ADDRESS": "192.168.0.****",
-    "TUYA_LOCAL_KEY": "UZ(****(g",
+    "TUYA_DEVICE_ID": "****",
+    "TUYA_IP_ADDRESS": "****",
+    "TUYA_LOCAL_KEY": "****",
     "TUYA_VERSION": 3.4,
     "TUYA_SWITCH_ID": 1,
     "REFRESH_RATE": 60,
@@ -12,6 +12,6 @@
     "ALARM_SOUND_FILE": "Alarm.wav",
     "MUTE_START_HOUR": 23,
     "MUTE_END_HOUR": 8,
-    "low_thresh": 15.0,
-    "high_thresh": 30.0
+    "low_thresh": 0.0,
+    "high_thresh": 90.0
 }
