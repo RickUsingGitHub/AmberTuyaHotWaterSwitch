@@ -7,9 +7,10 @@
     "TUYA_VERSION": 3.4,
     "REFRESH_RATE": 60,
     "WINDOW_SIZE": "1142x410",
-    "SETTINGS_FILE": "amber_alarm_settings.json",
     "CHEER_SOUND_FILE": "Cheer.wav",
     "ALARM_SOUND_FILE": "Alarm.wav",
     "MUTE_START_HOUR": 23,
-    "MUTE_END_HOUR": 8
+    "MUTE_END_HOUR": 8,
+    "low_thresh": 15.0,
+    "high_thresh": 30.0
 }
