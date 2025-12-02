@@ -180,18 +180,20 @@ class AmberAlarmApp:
                 return
 
             # Determine action based on last known state (self.hw_on)
+            switch_id = config.get("TUYA_SWITCH_ID", 1)
+
             # If unknown, fetch first
             if self.hw_on is None:
                 status = d.status()
                 if status and 'dps' in status:
-                    self.hw_on = status['dps'].get('1', False)
+                    self.hw_on = status['dps'].get(str(switch_id), False)
 
             # Send command
             if self.hw_on:
-                d.turn_off()
+                d.turn_off(switch=switch_id)
                 new_state = False
             else:
-                d.turn_on()
+                d.turn_on(switch=switch_id)
                 new_state = True
 
             # Update internal state and GUI immediately
@@ -390,9 +392,10 @@ class AmberAlarmApp:
             if not d: return None
 
             status = d.status()
+            switch_id = config.get("TUYA_SWITCH_ID", 1)
 
             if status and 'dps' in status:
-                is_on = status['dps'].get('1', False)
+                is_on = status['dps'].get(str(switch_id), False)
                 return is_on
             return None
         except Exception as e:

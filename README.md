@@ -24,6 +24,7 @@ The application uses a single `config.json` file for all settings.
     "TUYA_IP_ADDRESS": "your_tuya_device_ip",
     "TUYA_LOCAL_KEY": "your_tuya_local_key",
     "TUYA_VERSION": 3.4,
+    "TUYA_SWITCH_ID": 1,
     "REFRESH_RATE": 60,
     "WINDOW_SIZE": "1142x410",
     "CHEER_SOUND_FILE": "Cheer.wav",
@@ -38,6 +39,7 @@ The application uses a single `config.json` file for all settings.
 - **AMBER_API_TOKEN**: Your API token from Amber Electric.
 - **AMBER_SITE_ID**: (Optional) Your site ID. If null, it will be fetched automatically.
 - **TUYA_DEVICE_ID**, **TUYA_IP_ADDRESS**, **TUYA_LOCAL_KEY**: Configuration for your Tuya smart plug.
+- **TUYA_SWITCH_ID**: The switch index to control (default is 1). useful for power strips with multiple outlets.
 - **low_thresh**: Prices below this value are considered "Green".
 - **high_thresh**: Prices below this value (but above low_thresh) are considered "Yellow". Prices above this are "Red".
 
