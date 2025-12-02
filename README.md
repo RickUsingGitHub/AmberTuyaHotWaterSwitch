@@ -30,8 +30,8 @@ The application uses a single `config.json` file for all settings.
     "ALARM_SOUND_FILE": "Alarm.wav",
     "MUTE_START_HOUR": 23,
     "MUTE_END_HOUR": 8,
-    "low_thresh": 15.0,
-    "high_thresh": 30.0
+    "low_thresh": 0.0,
+    "high_thresh": 90.0
 }
 ```
 
