@@ -31,8 +31,8 @@ The application uses a single `config.json` file for all settings.
     "ALARM_SOUND_FILE": "Alarm.wav",
     "MUTE_START_HOUR": 23,
     "MUTE_END_HOUR": 8,
-    "low_thresh": 15.0,
-    "high_thresh": 30.0
+    "low_thresh": 0.0,
+    "high_thresh": 90.0
 }
 ```
 
@@ -46,7 +46,7 @@ The application uses a single `config.json` file for all settings.
 ## Usage
 
 1.  Ensure you have Python installed.
-2.  Install dependencies (see `requirements.txt` if available, or install `requests`, `tinytuya`, `tk`).
+2.  Install dependencies by running `pip install -r requirements.txt`.
 3.  Configure `config.json` with your credentials.
 4.  Run the application:
     ```bash

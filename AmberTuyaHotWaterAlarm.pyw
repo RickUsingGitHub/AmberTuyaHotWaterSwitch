@@ -49,8 +49,8 @@ class AmberAlarmApp:
         self.root.resizable(True, True)
 
         # State storage
-        self.low_threshold = config.get('low_thresh', 15.0)
-        self.high_threshold = config.get('high_thresh', 30.0)
+        self.low_threshold = config.get('low_thresh', 0.0)
+        self.high_threshold = config.get('high_thresh', 90.0)
         self.current_price_color = "initial"
         self.mute_until = datetime.now()
         self.hw_on = None # Track HW state for toggling
