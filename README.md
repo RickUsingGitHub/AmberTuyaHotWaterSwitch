@@ -44,7 +44,7 @@ The application uses a single `config.json` file for all settings.
 ## Usage
 
 1.  Ensure you have Python installed.
-2.  Install dependencies (see `requirements.txt` if available, or install `requests`, `tinytuya`, `tk`).
+2.  Install dependencies by running `pip install -r requirements.txt`.
 3.  Configure `config.json` with your credentials.
 4.  Run the application:
     ```bash
