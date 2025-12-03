@@ -132,7 +132,11 @@ class AmberAlarmApp:
 
         self.mute_buttons = []
         for hours in [1, 2, 4, 8]:
-            btn = tk.Button(self.frm_mute_btns, text=f"{hours}h Mute", command=lambda h=hours: self.set_mute(h),
+            firstButton = ""
+            if hours == 1:
+                firstButton = "Mute "
+
+            btn = tk.Button(self.frm_mute_btns, text=f"{firstButton}+{hours}h", command=lambda h=hours: self.set_mute(h),
                             font=self.font_button, bg="#444444", fg="#ffffff",
                             activebackground="#666666", activeforeground="#ffffff", relief=tk.FLAT, bd=0, width=8)
             btn.pack(side=tk.LEFT, padx=5)
