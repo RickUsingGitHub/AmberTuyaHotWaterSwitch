@@ -152,10 +152,26 @@ class AmberAlarmApp:
         self.thread = threading.Thread(target=self.update_loop, daemon=True)
         self.thread.start()
 
+        # Bind close event to save settings
+        self.root.protocol("WM_DELETE_WINDOW", self.on_close)
+
         # Perform an initial font sizing and button update
         self.root.update_idletasks()
         self.on_resize(None)
         self.update_mute_status()
+
+    def on_close(self):
+        """Handle window closing: Save geometry and exit."""
+        config['WINDOW_SIZE'] = self.root.geometry()
+
+        try:
+            with open(CONFIG_FILE, 'w') as f:
+                json.dump(config, f, indent=4)
+        except Exception as e:
+            print(f"Error saving config: {e}")
+
+        self.running = False
+        self.root.destroy()
 
     # --- TOGGLE LOGIC ---
     def _get_tuya_device(self):
