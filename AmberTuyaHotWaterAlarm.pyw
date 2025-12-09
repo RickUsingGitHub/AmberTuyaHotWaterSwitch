@@ -118,6 +118,9 @@ class AmberAlarmApp:
                                        activebackground="#444444", activeforeground="#ffffff", bd=0)
         self.btn_hw_toggle.grid(row=1, column=0, sticky="nsew", pady=(10, 20))
 
+        self.lbl_power = tk.Label(self.frm_right_hw, text="-- kW", font=self.font_small, bg="#333333", fg="#aaaaaa")
+        self.lbl_power.grid(row=2, column=0, pady=(0, 20))
+
         # --- BOTTOM ROW: MUTE CONTROLS ---
         self.frm_mute_controls = tk.Frame(self.frm_main, bg="#222222")
         self.frm_mute_controls.grid(row=1, column=0, columnspan=2, pady=(5, 10))
@@ -220,12 +223,13 @@ class AmberAlarmApp:
             self.hw_on = new_state
 
             # We don't have the price here, so pass None to just update HW status
-            self.root.after(0, self.update_gui, None, None, self.hw_on)
+            # Passing dict structure for hw_status with unknown power (None)
+            self.root.after(0, self.update_gui, None, None, {'is_on': self.hw_on, 'power': None})
 
         except Exception as e:
             print(f"Toggle Error: {e}")
             # Revert UI state on error
-            self.root.after(0, self.update_gui, None, None, self.hw_on)
+            self.root.after(0, self.update_gui, None, None, {'is_on': self.hw_on, 'power': None})
 
     # --- EXISTING LOGIC ---
 
@@ -414,15 +418,37 @@ class AmberAlarmApp:
             status = d.status()
             switch_id = config.get("TUYA_SWITCH_ID", 1)
 
+            result = {}
             if status and 'dps' in status:
-                is_on = status['dps'].get(str(switch_id), False)
-                return is_on
+                result['is_on'] = status['dps'].get(str(switch_id), False)
+
+                # Check for power DPS
+                # Common IDs: 19 (W/10), 18 (mA), 20 (V/10)
+                # Some devices use other IDs. We'll check for 19 first.
+                if '19' in status['dps']:
+                    result['power'] = status['dps']['19']
+
+                return result
             return None
         except Exception as e:
             print(f"Tuya Error: {e}")
             return None
 
-    def update_gui(self, price, price_status, hw_on):
+    def update_gui(self, price, price_status, hw_status):
+        # Extract data
+        hw_on = None
+        power_val = None
+        is_partial = False
+
+        if isinstance(hw_status, dict):
+            hw_on = hw_status.get('is_on')
+            power_val = hw_status.get('power')
+            # Check if power is explicitly None (partial update)
+            if 'power' in hw_status and power_val is None:
+                is_partial = True
+        else:
+            hw_on = hw_status
+
         # Allow partial updates (e.g. from toggle thread)
         if hw_on is not None:
             self.hw_on = hw_on # Sync internal state
@@ -433,6 +459,23 @@ class AmberAlarmApp:
                 self.btn_hw_toggle.config(text="OFF", fg="#00ff00")
             else:
                 self.btn_hw_toggle.config(text="OFFLINE", fg="#888888")
+
+        # Update Power Label
+        if power_val is not None:
+             # Calculate kW. Assuming val is dW (deciwatts) or W.
+             # Standard Tuya (v3.1/3.3) ID 19 is usually W*10.
+             # So 24000 = 2400.0 W = 2.4 kW.
+             try:
+                kw = float(power_val) / 10000.0
+                self.lbl_power.config(text=f"{kw:.3f} kW")
+             except (ValueError, TypeError):
+                self.lbl_power.config(text="? kW")
+        elif is_partial:
+             # Keep existing text for partial updates
+             pass
+        else:
+             # Default state if no status update or power not supported
+             self.lbl_power.config(text="-- kW")
 
         # If price is None, we are doing a partial update (HW only), skip price logic
         if price is None and price_status is None:
