@@ -119,7 +119,10 @@ class AmberAlarmApp:
         self.btn_hw_toggle.grid(row=1, column=0, sticky="nsew", pady=(6, 6))
 
         self.lbl_power = tk.Label(self.frm_right_hw, text="-- kW", font=self.font_small, bg="#333333", fg="#aaaaaa")
-        self.lbl_power.grid(row=2, column=0, pady=(0, 6))
+        self.lbl_power.grid(row=2, column=0, pady=(0, 0))
+
+        self.lbl_add_ele = tk.Label(self.frm_right_hw, text="Total: -- kWh", font=self.font_small, bg="#333333", fg="#aaaaaa")
+        self.lbl_add_ele.grid(row=3, column=0, pady=(0, 6))
 
         # --- BOTTOM ROW: MUTE CONTROLS ---
         self.frm_mute_controls = tk.Frame(self.frm_main, bg="#222222")
@@ -428,6 +431,11 @@ class AmberAlarmApp:
                 if '19' in status['dps']:
                     result['power'] = status['dps']['19']
 
+                # Check for add_ele DPS (ID 17)
+                add_ele_id = config.get("ADD_ELE_DPS_ID", "17")
+                if add_ele_id in status['dps']:
+                    result['add_ele'] = status['dps'][add_ele_id]
+
                 return result
             return None
         except Exception as e:
@@ -438,11 +446,13 @@ class AmberAlarmApp:
         # Extract data
         hw_on = None
         power_val = None
+        add_ele_val = None
         is_partial = False
 
         if isinstance(hw_status, dict):
             hw_on = hw_status.get('is_on')
             power_val = hw_status.get('power')
+            add_ele_val = hw_status.get('add_ele')
             # Check if power is explicitly None (partial update)
             if 'power' in hw_status and power_val is None:
                 is_partial = True
@@ -476,6 +486,18 @@ class AmberAlarmApp:
         else:
              # Default state if no status update or power not supported
              self.lbl_power.config(text="-- kW")
+
+        # Update Add Ele Label
+        if add_ele_val is not None:
+             # Assuming val is in 0.001 kWh units (multiple 3)
+             # So 12345 = 12.345 kWh
+             try:
+                 kwh = float(add_ele_val) / 1000.0
+                 self.lbl_add_ele.config(text=f"Total: {kwh:.3f} kWh")
+             except (ValueError, TypeError):
+                 self.lbl_add_ele.config(text="Total: ? kWh")
+        elif not is_partial:
+             self.lbl_add_ele.config(text="Total: -- kWh")
 
         # If price is None, we are doing a partial update (HW only), skip price logic
         if price is None and price_status is None:
