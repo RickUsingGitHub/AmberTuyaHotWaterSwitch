@@ -54,6 +54,7 @@ class AmberAlarmApp:
         self.current_price_color = "initial"
         self.mute_until = datetime.now()
         self.hw_on = None # Track HW state for toggling
+        self.tuya_device = None
 
         # Initial Custom Fonts
         self.font_med = font.Font(family="Segoe UI", size=18)
@@ -178,6 +179,9 @@ class AmberAlarmApp:
 
     # --- TOGGLE LOGIC ---
     def _get_tuya_device(self):
+        if self.tuya_device:
+            return self.tuya_device
+
         dev_id = config.get("TUYA_DEVICE_ID")
         ip = config.get("TUYA_IP_ADDRESS")
         key = config.get("TUYA_LOCAL_KEY")
@@ -188,6 +192,7 @@ class AmberAlarmApp:
 
         d = tinytuya.OutletDevice(dev_id, ip, key)
         d.set_version(ver)
+        self.tuya_device = d
         return d
 
     def toggle_hot_water(self):
