@@ -111,24 +111,24 @@ class AmberAlarmApp:
         self.frm_right_hw.grid_rowconfigure(1, weight=1)
 
         self.lbl_hw_header = tk.Label(self.frm_right_hw, text="Hot Water Switch Status", font=self.font_med, bg="#333333", fg="#bbbbbb")
-        self.lbl_hw_header.grid(row=0, column=0, pady=(6, 0), sticky="ew")
+        self.lbl_hw_header.grid(row=0, column=0, pady=(3, 0), sticky="ew")
 
         # CHANGED: Label became a Button for interactivity
         self.btn_hw_toggle = tk.Button(self.frm_right_hw, text="UNKNOWN", font=self.font_x_large, bg="#333333", fg="#888888",
                                        command=self.toggle_hot_water, relief=tk.FLAT,
                                        activebackground="#444444", activeforeground="#ffffff", bd=0)
-        self.btn_hw_toggle.grid(row=1, column=0, sticky="nsew", pady=(6, 6))
+        self.btn_hw_toggle.grid(row=1, column=0, sticky="nsew", pady=(3, 3))
 
         self.lbl_power = tk.Label(self.frm_right_hw, text="-- kW", font=self.font_small, bg="#333333", fg="#aaaaaa")
-        self.lbl_power.grid(row=2, column=0, pady=(0, 6))
+        self.lbl_power.grid(row=2, column=0, pady=(0, 0))
 
         # --- BOTTOM ROW: MUTE CONTROLS ---
         self.frm_mute_controls = tk.Frame(self.frm_main, bg="#222222")
-        self.frm_mute_controls.grid(row=1, column=0, columnspan=2, pady=(5, 10))
+        self.frm_mute_controls.grid(row=1, column=0, columnspan=2, pady=(5, 5))
 
         # Mute Status Label
         self.lbl_mute_status = tk.Label(self.frm_mute_controls, text="Sound Alerts Active", font=self.font_button, bg="#222222", fg="#888888")
-        self.lbl_mute_status.pack(side=tk.TOP, pady=(0, 5))
+        self.lbl_mute_status.pack(side=tk.TOP, pady=(0, 3))
 
         # Mute Buttons Frame
         self.frm_mute_btns = tk.Frame(self.frm_mute_controls, bg="#222222")
@@ -472,7 +472,7 @@ class AmberAlarmApp:
              # So 24000 = 2400.0 W = 2.4 kW.
              try:
                 kw = float(power_val) / 10000.0
-                self.lbl_power.config(text=f"{kw:.3f} kW")
+                self.lbl_power.config(text=f"{kw:.1f} kW")
              except (ValueError, TypeError):
                 self.lbl_power.config(text="? kW")
         elif is_partial:
