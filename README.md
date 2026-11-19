@@ -12,7 +12,9 @@ A Tkinter-based desktop application that monitors real-time electricity prices f
 
 ## Configuration
 
-The application uses a single `config.json` file for all settings.
+The application reads its settings from `config.json` in the same folder.
+
+`config.json` holds your Amber API token and Tuya local key, so it is **not** kept in git (it's listed in `.gitignore`). Start from `config.example.json`: copy it to `config.json`, or just run the app once and it will make the copy for you. Never commit `config.json`.
 
 ### `config.json` Structure
 
@@ -47,7 +49,7 @@ The application uses a single `config.json` file for all settings.
 
 1.  Ensure you have Python installed.
 2.  Install dependencies by running `pip install -r requirements.txt`.
-3.  Configure `config.json` with your credentials.
+3.  Copy `config.example.json` to `config.json` (or run the app once to create it) and fill in your credentials.
 4.  Run the application:
     ```bash
     python AmberTuyaHotWaterAlarm.pyw
@@ -55,4 +57,8 @@ The application uses a single `config.json` file for all settings.
 
 ## Settings
 
-You can adjust the price thresholds directly in the application interface. These changes are saved back to `config.json`.
+You can adjust the price thresholds directly in the application interface. These changes are saved back to `config.json`, which stays on your computer.
+
+## Tests
+
+`python tests/test_logic.py` checks the hot-water button, the OFFLINE state and the mute timers without a screen or a real plug.

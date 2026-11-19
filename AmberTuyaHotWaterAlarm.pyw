@@ -6,6 +6,7 @@ import tinytuya
 import requests
 import json
 import os
+import shutil
 import sys
 from datetime import datetime, timedelta
 
@@ -17,7 +18,10 @@ except ImportError:
     print("winsound module not available. Sound alerts will be disabled.")
 
 # --- LOAD CONFIGURATION ---
+# config.json holds your own API token and Tuya key, so it is not kept in git (see .gitignore).
+# On first run it is created from config.example.json for you to fill in.
 CONFIG_FILE = "config.json"
+EXAMPLE_CONFIG_FILE = "config.example.json"
 config = {}
 
 def load_main_config():
@@ -25,6 +29,12 @@ def load_main_config():
     # Ensure we look in the script's directory
     script_dir = os.path.dirname(os.path.abspath(__file__))
     os.chdir(script_dir)
+
+    if not os.path.exists(CONFIG_FILE) and os.path.exists(EXAMPLE_CONFIG_FILE):
+        shutil.copyfile(EXAMPLE_CONFIG_FILE, CONFIG_FILE)
+        messagebox.showinfo("First run", f"Created {CONFIG_FILE} from {EXAMPLE_CONFIG_FILE}.\n"
+                            "Add your Amber API token and Tuya details to it, then start the app again.")
+        sys.exit(0)
 
     if os.path.exists(CONFIG_FILE):
         try:
@@ -55,6 +65,7 @@ class AmberAlarmApp:
         self.mute_until = datetime.now()
         self.hw_on = None # Track HW state for toggling
         self.tuya_device = None
+        self._mute_job = None # The one pending update_mute_status timer
 
         # Initial Custom Fonts
         self.font_med = font.Font(family="Segoe UI", size=18)
@@ -205,36 +216,36 @@ class AmberAlarmApp:
         try:
             d = self._get_tuya_device()
             if not d:
+                # Not set up in config.json: put the button back instead of leaving it on "..."
+                self.root.after(0, self.update_hw_display, {'configured': False})
                 return
 
-            # Determine action based on last known state (self.hw_on)
             switch_id = config.get("TUYA_SWITCH_ID", 1)
 
-            # If unknown, fetch first
-            if self.hw_on is None:
+            # If the state is unknown, read it first. If that fails, do nothing: guessing
+            # could switch the heater on when it was meant to be off.
+            current = self.hw_on
+            if current is None:
                 status = d.status()
-                if status and 'dps' in status:
-                    self.hw_on = status['dps'].get(str(switch_id), False)
+                if not (status and 'dps' in status):
+                    self.root.after(0, self.update_hw_display, None)
+                    return
+                current = bool(status['dps'].get(str(switch_id), False))
 
-            # Send command
-            if self.hw_on:
-                d.turn_off(switch=switch_id)
-                new_state = False
-            else:
-                d.turn_on(switch=switch_id)
-                new_state = True
+            # Send command. tinytuya reports a failure as a dict with an 'Error' key.
+            result = d.turn_off(switch=switch_id) if current else d.turn_on(switch=switch_id)
+            if isinstance(result, dict) and 'Error' in result:
+                raise RuntimeError(result['Error'])
 
-            # Update internal state and GUI immediately
-            self.hw_on = new_state
-
-            # We don't have the price here, so pass None to just update HW status
-            # Passing dict structure for hw_status with unknown power (None)
-            self.root.after(0, self.update_gui, None, None, {'is_on': self.hw_on, 'power': None})
+            self.hw_on = not current
+            # Power isn't known yet; the next status read fills it in.
+            self.root.after(0, self.update_hw_display, {'is_on': self.hw_on, 'power': None})
 
         except Exception as e:
             print(f"Toggle Error: {e}")
-            # Revert UI state on error
-            self.root.after(0, self.update_gui, None, None, {'is_on': self.hw_on, 'power': None})
+            # Show what we last knew (or OFFLINE) and re-enable the button.
+            last = {'is_on': self.hw_on, 'power': None} if self.hw_on is not None else None
+            self.root.after(0, self.update_hw_display, last)
 
     # --- EXISTING LOGIC ---
 
@@ -272,8 +283,7 @@ class AmberAlarmApp:
             for btn in self.mute_buttons:
                 btn.config(state=tk.DISABLED, bg="#333333")
 
-            if self.root.after_idle:
-                 self.root.after(60000, self.update_mute_status)
+            self._schedule_mute_check(60000)
             return
 
         # Check Manual Mute
@@ -294,14 +304,22 @@ class AmberAlarmApp:
             for btn in self.mute_buttons:
                 btn.config(state=tk.NORMAL, bg="#444444")
 
-            if self.root.after_idle:
-                 self.root.after(1000, self.update_mute_status)
+            self._schedule_mute_check(1000)
         else:
             self.mute_until = now
             self.lbl_mute_status.config(text="Sound Alerts Active", fg="#888888")
             self.btn_cancel_mute.config(state=tk.DISABLED, bg="#333333")
             for btn in self.mute_buttons:
                 btn.config(state=tk.NORMAL, bg="#444444")
+            # Keep checking, so the label switches to Night Mute when the quiet hours start.
+            self._schedule_mute_check(60000)
+
+    def _schedule_mute_check(self, ms):
+        """Run update_mute_status once after ms, replacing any check already waiting
+        (otherwise every Mute press would start another repeating timer)."""
+        if self._mute_job is not None:
+            self.root.after_cancel(self._mute_job)
+        self._mute_job = self.root.after(ms, self.update_mute_status)
 
     def on_resize(self, event):
         if event and event.widget != self.root:
@@ -416,9 +434,10 @@ class AmberAlarmApp:
             return None, "Error"
 
     def get_tuya_status(self):
+        """{'is_on', 'power'?} from the plug, {'configured': False} if it isn't set up, None if unreachable."""
         try:
             d = self._get_tuya_device()
-            if not d: return None
+            if not d: return {'configured': False}
 
             status = d.status()
             switch_id = config.get("TUYA_SWITCH_ID", 1)
@@ -439,52 +458,44 @@ class AmberAlarmApp:
             print(f"Tuya Error: {e}")
             return None
 
-    def update_gui(self, price, price_status, hw_status):
-        # Extract data
-        hw_on = None
-        power_val = None
-        is_partial = False
+    def update_hw_display(self, hw_status):
+        """Show the plug's state. hw_status: {'is_on', 'power'?}, {'configured': False}, or None (unreachable)."""
+        if hw_status is None:
+            # Couldn't reach the plug: say so rather than showing a stale ON/OFF,
+            # and forget the state so the next toggle reads it first.
+            self.hw_on = None
+            self.btn_hw_toggle.config(text="OFFLINE", fg="#888888", state=tk.NORMAL)
+            self.lbl_power.config(text="-- kW")
+            return
+        if hw_status.get('configured') is False:
+            self.hw_on = None
+            self.btn_hw_toggle.config(text="NOT SET UP", fg="#888888", state=tk.DISABLED)
+            self.lbl_power.config(text="-- kW")
+            return
 
-        if isinstance(hw_status, dict):
-            hw_on = hw_status.get('is_on')
-            power_val = hw_status.get('power')
-            # Check if power is explicitly None (partial update)
-            if 'power' in hw_status and power_val is None:
-                is_partial = True
+        hw_on = hw_status.get('is_on')
+        self.hw_on = hw_on
+        self.btn_hw_toggle.config(state=tk.NORMAL)
+        if hw_on:
+            self.btn_hw_toggle.config(text="ON", fg="#ff4444")
         else:
-            hw_on = hw_status
+            self.btn_hw_toggle.config(text="OFF", fg="#00ff00")
 
-        # Allow partial updates (e.g. from toggle thread)
-        if hw_on is not None:
-            self.hw_on = hw_on # Sync internal state
-            self.btn_hw_toggle.config(state=tk.NORMAL) # Re-enable if disabled
-            if hw_on is True:
-                self.btn_hw_toggle.config(text="ON", fg="#ff4444")
-            elif hw_on is False:
-                self.btn_hw_toggle.config(text="OFF", fg="#00ff00")
-            else:
-                self.btn_hw_toggle.config(text="OFFLINE", fg="#888888")
-
-        # Update Power Label
+        # Power label. A toggle sends 'power': None: keep the old reading until the next status.
+        power_val = hw_status.get('power')
         if power_val is not None:
-             # Calculate kW. Assuming val is dW (deciwatts) or W.
-             # Standard Tuya (v3.1/3.3) ID 19 is usually W*10.
-             # So 24000 = 2400.0 W = 2.4 kW.
-             try:
+            # Standard Tuya (v3.1/3.3) DPS 19 is W×10, so 24000 = 2400.0 W = 2.4 kW.
+            try:
                 kw = float(power_val) / 10000.0
                 self.lbl_power.config(text=f"{kw:.1f} kW")
-             except (ValueError, TypeError):
+            except (ValueError, TypeError):
                 self.lbl_power.config(text="? kW")
-        elif is_partial:
-             # Keep existing text for partial updates
-             pass
-        else:
-             # Default state if no status update or power not supported
-             self.lbl_power.config(text="-- kW")
+        elif 'power' not in hw_status:
+            # Plug doesn't report power
+            self.lbl_power.config(text="-- kW")
 
-        # If price is None, we are doing a partial update (HW only), skip price logic
-        if price is None and price_status is None:
-            return
+    def update_gui(self, price, price_status, hw_status):
+        self.update_hw_display(hw_status)
 
         # Full Update Logic
         thresh_low = self.low_threshold
