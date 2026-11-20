@@ -95,6 +95,12 @@ Dev.turn_reply = {'Error': 'timeout'}; Dev.calls = []; a._toggle_hw_thread()
 check(Dev.calls == ['off'] and a.hw_on is True and a.btn_hw_toggle.cfg['text'] == 'ON' and a.btn_hw_toggle.cfg['state'] == 'normal', 'failed command keeps ON and re-enables the button')
 Dev.turn_reply = {}
 
+# 3b. a reply that leaves out the switch's reading is unknown, not OFF
+Dev.status_reply = {'dps': {'19': 0}}; Dev.calls = []; a.hw_on = None; a._toggle_hw_thread()
+check(Dev.calls == [], 'reply without the switch reading: no command sent (was: switched ON)')
+a.update_gui(None, None, a.get_tuya_status())
+check(a.btn_hw_toggle.cfg['text'] == 'OFFLINE', 'reply without the switch reading shows OFFLINE, not OFF')
+
 # 4. night mute label switches on without a manual mute; only one timer at a time
 m, a = app_with(dict(base, MUTE_START_HOUR=0, MUTE_END_HOUR=0))  # never night
 a.root.jobs.clear(); a._mute_job = None
