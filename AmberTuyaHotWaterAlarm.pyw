@@ -227,10 +227,11 @@ class AmberAlarmApp:
             current = self.hw_on
             if current is None:
                 status = d.status()
-                if not (status and 'dps' in status):
+                # A reply without this switch's reading is as unknown as no reply.
+                if not (status and isinstance(status.get('dps'), dict) and str(switch_id) in status['dps']):
                     self.root.after(0, self.update_hw_display, None)
                     return
-                current = bool(status['dps'].get(str(switch_id), False))
+                current = bool(status['dps'][str(switch_id)])
 
             # Send command. tinytuya reports a failure as a dict with an 'Error' key.
             result = d.turn_off(switch=switch_id) if current else d.turn_on(switch=switch_id)
@@ -443,8 +444,9 @@ class AmberAlarmApp:
             switch_id = config.get("TUYA_SWITCH_ID", 1)
 
             result = {}
-            if status and 'dps' in status:
-                result['is_on'] = status['dps'].get(str(switch_id), False)
+            # Without this switch's reading the state is unknown (shown as OFFLINE), never assumed OFF.
+            if status and isinstance(status.get('dps'), dict) and str(switch_id) in status['dps']:
+                result['is_on'] = bool(status['dps'][str(switch_id)])
 
                 # Check for power DPS
                 # Common IDs: 19 (W/10), 18 (mA), 20 (V/10)
